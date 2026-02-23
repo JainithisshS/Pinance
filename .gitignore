@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.venv/
+*.sqlite3
+*.db
+
+# Secrets
+.env
+backend/firebase-admin-sdk.json
+
+# Android build artifacts
+android/app/src/main/build/
+android/app/src/main/app/build/
+android/app/src/main/.gradle/
+android/app/src/main/app/.gradle/
+*.apk
+*.aab
+local.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ML models (large, can be retrained)
+backend/*.joblib
+
+# Misc
+*.log

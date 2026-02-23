@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "111761043069",
+    "project_id": "pinance-3c6ad",
+    "storage_bucket": "pinance-3c6ad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:111761043069:android:bcb93b673bbda481c5cb14",
+        "android_client_info": {
+          "package_name": "com.example.agenticfinance"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "111761043069-et260nhqb0ibh4vfvbv6n89496b4tse0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAX-yam7el64bgzDv8fIhIFvOHs-1Wezhg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "111761043069-et260nhqb0ibh4vfvbv6n89496b4tse0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

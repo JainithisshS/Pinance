@@ -1,0 +1,98 @@
+[
+  {
+    "id": "income_basics",
+    "name": "Income",
+    "description": "Understanding sources of income and salary structure.",
+    "prerequisites": [],
+    "impact": 2,
+    "card_title": "Where does your money come from?",
+    "learning_text": "Your income is the starting point of all your finances. It could be your salary, freelance earnings, or even pocket money. Knowing your exact take-home amount (after taxes and deductions) helps you plan better.\n\nTip: Many people confuse gross salary with net salary. Always plan based on what actually hits your bank account.",
+    "quiz_question": "If your gross salary is ₹50,000 but ₹8,000 is deducted for taxes and PF, how much should you use for budgeting?",
+    "quiz_options": ["₹50,000", "₹42,000", "₹58,000"],
+    "quiz_correct": 1
+  },
+  {
+    "id": "expense_basics",
+    "name": "Expenses",
+    "description": "Fixed vs variable expenses and tracking them.",
+    "prerequisites": [],
+    "impact": 3,
+    "card_title": "Know where your money goes",
+    "learning_text": "Expenses fall into two buckets:\n\n• Fixed: Rent, EMIs, subscriptions – these stay the same every month.\n• Variable: Food, shopping, entertainment – these change based on your choices.\n\nTracking both helps you spot patterns. Most people underestimate variable expenses by 20-30%!",
+    "quiz_question": "Which of these is a fixed expense?",
+    "quiz_options": ["Weekend dining out", "Netflix subscription", "Buying new clothes"],
+    "quiz_correct": 1
+  },
+  {
+    "id": "budgeting",
+    "name": "Budgeting",
+    "description": "Creating a simple monthly budget (50-30-20 style).",
+    "prerequisites": ["income_basics", "expense_basics"],
+    "impact": 3,
+    "card_title": "The simple 50-30-20 rule",
+    "learning_text": "A budget doesn't have to be complicated. Try this:\n\n• 50% for needs (rent, groceries, bills)\n• 30% for wants (entertainment, dining, shopping)\n• 20% for savings and debt repayment\n\nExample: If you earn ₹40,000, that's ₹20,000 for needs, ₹12,000 for wants, and ₹8,000 for savings.",
+    "quiz_question": "With a ₹60,000 salary using 50-30-20, how much goes to wants?",
+    "quiz_options": ["₹30,000", "₹18,000", "₹12,000"],
+    "quiz_correct": 1
+  },
+  {
+    "id": "savings_rate",
+    "name": "Savings",
+    "description": "Saving a percentage of income every month.",
+    "prerequisites": ["budgeting"],
+    "impact": 3,
+    "card_title": "Pay yourself first",
+    "learning_text": "The secret to saving? Do it first, not last. As soon as your salary comes in, move a fixed amount to savings before you spend on anything else.\n\nEven ₹2,000/month adds up to ₹24,000 in a year. Start small, stay consistent.",
+    "quiz_question": "When is the best time to transfer money to savings?",
+    "quiz_options": ["End of month if anything is left", "Right when salary arrives", "Only when you get a bonus"],
+    "quiz_correct": 1
+  },
+  {
+    "id": "emergency_fund",
+    "name": "Emergency Fund",
+    "description": "Building 3-6 months of expenses as safety buffer.",
+    "prerequisites": ["savings_rate"],
+    "impact": 4,
+    "card_title": "Your financial safety net",
+    "learning_text": "Life throws surprises – job loss, medical bills, urgent repairs. An emergency fund is money set aside just for these moments.\n\nAim for 3-6 months of your monthly expenses. If you spend ₹25,000/month, target ₹75,000 to ₹1,50,000. Keep it in a savings account you can access quickly.",
+    "quiz_question": "If your monthly expenses are ₹30,000, what's a good emergency fund target?",
+    "quiz_options": ["₹30,000", "₹90,000 to ₹1,80,000", "₹10,000"],
+    "quiz_correct": 1
+  },
+  {
+    "id": "emi_basics",
+    "name": "EMI",
+    "description": "Equated Monthly Instalments and how interest works.",
+    "prerequisites": ["expense_basics"],
+    "impact": 3,
+    "card_title": "Understanding EMIs",
+    "learning_text": "EMI = Equated Monthly Instalment. When you take a loan, you pay it back in fixed monthly chunks that include both principal and interest.\n\nThe catch: In early months, most of your EMI goes toward interest, not the actual loan. A ₹10 lakh loan at 10% for 5 years means you pay about ₹2.75 lakh just as interest!",
+    "quiz_question": "In the early months of an EMI, what does most of your payment go toward?",
+    "quiz_options": ["Principal (loan amount)", "Interest", "Processing fees"],
+    "quiz_correct": 1
+  },
+  {
+    "id": "risk_basics",
+    "name": "Risk",
+    "description": "Risk vs return, volatility, and risk capacity.",
+    "prerequisites": ["emergency_fund"],
+    "impact": 4,
+    "card_title": "Risk and reward go together",
+    "learning_text": "Higher potential returns usually mean higher risk. A savings account is safe but grows slowly (~4%). Stocks can grow 12-15% but can also drop.\n\nYour risk capacity depends on: age, income stability, and whether you have an emergency fund. Only invest what you can afford to not touch for 5+ years.",
+    "quiz_question": "Which investment typically has higher risk AND higher potential return?",
+    "quiz_options": ["Fixed Deposit", "Savings Account", "Stock Market"],
+    "quiz_correct": 2
+  },
+  {
+    "id": "mutual_funds_intro",
+    "name": "Mutual Funds",
+    "description": "Basics of mutual funds and SIP investing.",
+    "prerequisites": ["risk_basics", "savings_rate"],
+    "impact": 3,
+    "card_title": "Mutual Funds made simple",
+    "learning_text": "A mutual fund pools money from many people and invests it in stocks, bonds, or both. You don't pick individual stocks – a fund manager does it for you.\n\nSIP (Systematic Investment Plan) lets you invest a fixed amount monthly. ₹2,000/month at 12% for 10 years can grow to about ₹4.6 lakhs!",
+    "quiz_question": "What does SIP stand for?",
+    "quiz_options": ["Single Investment Plan", "Systematic Investment Plan", "Stock Investment Portfolio"],
+    "quiz_correct": 1
+  }
+]

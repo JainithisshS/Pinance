@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:text="Adaptive Learning"
+            android:textStyle="bold"
+            android:textSize="24sp"
+            android:layout_marginBottom="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/btnStartLearning"
+            android:text="Start Learning Session"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <!-- Learning Card Container (Initially Hidden) -->
+        <LinearLayout
+            android:id="@+id/layoutLearningCard"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="#F5F5F5"
+            android:padding="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/txtConceptTitle"
+                android:text="Concept Title"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/txtCardContent"
+                android:text="Learning content goes here..."
+                android:textSize="14sp"
+                android:lineSpacingMultiplier="1.2"
+                android:layout_marginBottom="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="20dp"
+                android:background="#CCCCCC" />
+
+            <TextView
+                android:id="@+id/txtQuizQuestion"
+                android:text="Quiz Question?"
+                android:textStyle="italic"
+                android:layout_marginBottom="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <RadioGroup
+                android:id="@+id/radioGroupOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <!-- Options added dynamically -->
+            </RadioGroup>
+
+            <Button
+                android:id="@+id/btnSubmitAnswer"
+                android:text="Submit Answer"
+                android:layout_marginTop="16dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/txtFeedback"
+                android:text=""
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:padding="8dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+            
+            <Button
+                android:id="@+id/btnNextCard"
+                android:text="Next Card"
+                android:visibility="gone"
+                android:layout_marginTop="12dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

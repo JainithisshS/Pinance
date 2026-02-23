@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.env
+firebase-admin-sdk.json
+venv/
+.venv/
+*.sqlite3
+*.db
+.git/
+.github/
+android/
+docs/
+*.md

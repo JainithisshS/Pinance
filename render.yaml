@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: agentic-finance-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: USE_SUPABASE
+        value: "true"
+      - key: SUPABASE_URL
+        sync: false  # Set manually in Render dashboard
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: FIREBASE_ADMIN_SDK_JSON
+        sync: false  # Paste the full JSON content of firebase-admin-sdk.json
+      - key: TF_ENABLE_ONEDNN_OPTS
+        value: "0"
+      - key: TF_CPP_MIN_LOG_LEVEL
+        value: "2"
