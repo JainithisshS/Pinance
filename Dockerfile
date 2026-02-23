@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy requirements first (Docker cache layer)
 COPY backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r backend/requirements.txt && \
     pip install --no-cache-dir tf-keras
 

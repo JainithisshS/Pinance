@@ -5,11 +5,9 @@ httpx
 scikit-learn
 pandas
 joblib
-pytest
 spacy
 transformers
 supabase
 python-dotenv
-torch
 firebase-admin
 groq
