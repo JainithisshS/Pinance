@@ -212,11 +212,12 @@ def is_credit_message(raw_message: str) -> bool:
 
 # ── Spam / promotional patterns that should NEVER be treated as transactions ──
 _SPAM_KEYWORDS = [
-    "recharge", "offer", "cashback offer", "subscribe", "plan",
-    "activate", "upgrade", "free", "win", "prize",
-    "congratulations", "claim", "hurry", "limited time",
-    "coupon", "discount code", "promo", "otp", "one time password",
-    "verify", "verification code", "login code",
+    "cashback offer", "subscribe now", "limited time",
+    "congratulations", "claim now", "hurry",
+    "coupon", "discount code", "promo code",
+    "otp", "one time password",
+    "verification code", "login code",
+    "win big", "lucky draw",
 ]
 
 # Terms that strongly signal a real bank SMS
@@ -233,14 +234,10 @@ def is_financial_sms(message: str) -> bool:
     Requires:
       1. A recognisable money amount (Rs / INR / rupees + number)
       2. At least one debit/credit keyword **or** one strong bank signal
-      3. NOT primarily a spam / promotional message
+    Rejects only if message is clearly spam (multiple spam-only keywords
+    with NO bank signals at all).
     """
     text = message.lower()
-
-    # ── Quick spam rejection ──
-    spam_hits = sum(1 for kw in _SPAM_KEYWORDS if kw in text)
-    if spam_hits >= 2:
-        return False
 
     # ── Must contain a money amount ──
     if AMOUNT_PATTERN.search(message) is None:
@@ -251,7 +248,15 @@ def is_financial_sms(message: str) -> bool:
                       any(kw in text for kw in _DEBIT_KEYWORDS)
     has_bank_signal = any(kw in text for kw in _BANK_SIGNALS)
 
-    return has_txn_keyword or has_bank_signal
+    if not has_txn_keyword and not has_bank_signal:
+        return False
+
+    # ── Reject only if clearly spam AND no bank signals ──
+    spam_hits = sum(1 for kw in _SPAM_KEYWORDS if kw in text)
+    if spam_hits >= 2 and not has_bank_signal and not has_txn_keyword:
+        return False
+
+    return True
 
 
 def _parse_amount(message: str) -> Optional[float]:
