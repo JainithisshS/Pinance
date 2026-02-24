@@ -1,6 +1,7 @@
 package com.example.agenticfinance
 
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
@@ -80,6 +81,9 @@ interface FinanceApi {
         @Path("id") id: Int,
         @Body body: UpdateCategoryRequestDto
     ): UpdateCategoryResponseDto
+
+    @DELETE("/api/transactions")
+    suspend fun clearTransactions(): Map<String, Any>
 }
 
 data class BeliefStateDto(
