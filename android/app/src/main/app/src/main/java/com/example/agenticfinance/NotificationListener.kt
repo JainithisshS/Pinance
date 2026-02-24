@@ -3,6 +3,7 @@ package com.example.agenticfinance
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -11,8 +12,38 @@ class NotificationListener : NotificationListenerService() {
 
     private val ioScope = CoroutineScope(Dispatchers.IO)
 
+    // SMS / messaging app packages – only listen to these
+    private val smsPackages = setOf(
+        "com.android.mms",
+        "com.google.android.apps.messaging",  // Google Messages
+        "com.samsung.android.messaging",
+        "com.oneplus.mms",
+        "com.android.messaging",
+        "com.sonyericsson.conversations",
+        "com.motorola.messaging",
+    )
+
+    // Keywords that indicate a genuine banking debit/credit SMS
+    private val bankingKeywords = listOf(
+        "debited", "credited", "debit", "credit",
+        "spent", "received", "withdrawn", "transferred",
+        "transaction", "payment", "purchase",
+        "a/c", "account", "acct",
+        "upi", "neft", "imps", "rtgs", "atm",
+        "bal", "avl bal", "balance",
+    )
+
+    // Amount pattern: Rs/INR/₹ followed by a number, or number followed by "rupees"
+    private val amountRegex = Regex(
+        """(?:inr|rs\.?|₹)\s*[0-9,]+\.?[0-9]*|[0-9,]+\.?[0-9]*\s*rupees""",
+        RegexOption.IGNORE_CASE
+    )
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
+
+        // ── Only process notifications from SMS apps ──
+        if (sbn.packageName !in smsPackages) return
 
         val extras = sbn.notification.extras
         val title = extras.getCharSequence("android.title")?.toString() ?: ""
@@ -21,7 +52,27 @@ class NotificationListener : NotificationListenerService() {
 
         if (rawMessage.isEmpty()) return
 
+        // ── Only process if it looks like a banking debit/credit SMS ──
+        if (!isFinancialMessage(rawMessage)) {
+            Log.d("NotificationListener", "Skipped non-financial SMS: ${rawMessage.take(60)}")
+            return
+        }
+
         sendToBackend(rawMessage)
+    }
+
+    /**
+     * Returns true only if the message contains BOTH a money amount
+     * AND at least one banking keyword (debited, credited, a/c, upi, etc.).
+     */
+    private fun isFinancialMessage(message: String): Boolean {
+        val lower = message.lowercase()
+
+        val hasBankingKeyword = bankingKeywords.any { it in lower }
+        if (!hasBankingKeyword) return false
+
+        val hasAmount = amountRegex.containsMatchIn(message)
+        return hasAmount
     }
 
     private fun sendToBackend(raw: String) {
@@ -29,8 +80,9 @@ class NotificationListener : NotificationListenerService() {
             try {
                 val body = ParseMessageRequestDto(raw_message = raw)
                 val tx = ApiClient.api.parseMessage(body)
-                Log.d("NotificationListener", "Sent transaction: $tx")
+                Log.d("NotificationListener", "Parsed transaction: ₹${tx.amount} [${tx.category}]")
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.e("NotificationListener", "Error sending to backend", e)
             }
         }

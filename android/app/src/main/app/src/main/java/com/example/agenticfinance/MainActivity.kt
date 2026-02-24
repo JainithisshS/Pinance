@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -129,11 +130,11 @@ fun AgenticFinanceApp(
             val start = today.withDayOfMonth(1).toString()
             val end = today.toString()
             coroutineScope {
-                val dAnalysis = async { try { ApiClient.api.analyzeFinance(FinanceAnalysisRequestDto(start_date = start, end_date = end)) } catch (_: Exception) { null } }
-                val dNewsHome = async { try { ApiClient.api.analyzeNews(NewsAnalysisRequestDto(topic = "NIFTY 50")) } catch (_: Exception) { null } }
-                val dTopicNews = async { try { ApiClient.api.analyzeNews(NewsAnalysisRequestDto(topic = "MARKETS")) } catch (_: Exception) { null } }
-                val dFeed = async { try { ApiClient.api.getNewsFeed() } catch (_: Exception) { emptyList<NewsFeedArticleDto>() } }
-                val dMarket = async { try { ApiClient.api.getMarketData() } catch (_: Exception) { null as MarketDataDto? } }
+                val dAnalysis = async { try { ApiClient.api.analyzeFinance(FinanceAnalysisRequestDto(start_date = start, end_date = end)) } catch (e: Exception) { if (e is CancellationException) throw e; null } }
+                val dNewsHome = async { try { ApiClient.api.analyzeNews(NewsAnalysisRequestDto(topic = "NIFTY 50")) } catch (e: Exception) { if (e is CancellationException) throw e; null } }
+                val dTopicNews = async { try { ApiClient.api.analyzeNews(NewsAnalysisRequestDto(topic = "MARKETS")) } catch (e: Exception) { if (e is CancellationException) throw e; null } }
+                val dFeed = async { try { ApiClient.api.getNewsFeed() } catch (e: Exception) { if (e is CancellationException) throw e; emptyList<NewsFeedArticleDto>() } }
+                val dMarket = async { try { ApiClient.api.getMarketData() } catch (e: Exception) { if (e is CancellationException) throw e; null as MarketDataDto? } }
                 sharedAnalysis = dAnalysis.await()
                 sharedNewsOverview = dNewsHome.await()
                 sharedTopicAnalysis = dTopicNews.await()
@@ -142,16 +143,38 @@ fun AgenticFinanceApp(
                 if (mkt != null) { sharedMarketIndices = mkt.indices; sharedSectorIndices = mkt.sectors }
 
                 // Analysis-specific fetches
-                val dBreakdown = async { try { ApiClient.api.expenseBreakdown(FinanceAnalysisRequestDto(start_date = start, end_date = end)) } catch (_: Exception) { emptyList<ExpenseCategorySummaryDto>() } }
+                val dBreakdown = async { try { ApiClient.api.expenseBreakdown(FinanceAnalysisRequestDto(start_date = start, end_date = end)) } catch (e: Exception) { if (e is CancellationException) throw e; emptyList<ExpenseCategorySummaryDto>() } }
                 val prevEnd = today.withDayOfMonth(1).minusDays(1)
                 val prevStart = prevEnd.withDayOfMonth(1)
-                val dPrev = async { try { ApiClient.api.analyzeFinance(FinanceAnalysisRequestDto(start_date = prevStart.toString(), end_date = prevEnd.toString())) } catch (_: Exception) { null as FinanceAnalysisResponseDto? } }
+                val dPrev = async { try { ApiClient.api.analyzeFinance(FinanceAnalysisRequestDto(start_date = prevStart.toString(), end_date = prevEnd.toString())) } catch (e: Exception) { if (e is CancellationException) throw e; null as FinanceAnalysisResponseDto? } }
                 sharedBreakdown = dBreakdown.await()
                 sharedPrevAnalysis = dPrev.await()
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) { if (e is CancellationException) throw e }
         sharedDataLoading = false
         sharedAnalysisLoading = false
+    }
+
+    // Refresh analysis data when navigating to the analysis tab
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == "analysis") {
+            try {
+                val today = java.time.LocalDate.now()
+                val start = today.withDayOfMonth(1).toString()
+                val end = today.toString()
+                val body = FinanceAnalysisRequestDto(start_date = start, end_date = end)
+                coroutineScope {
+                    val dA = async { try { ApiClient.api.analyzeFinance(body) } catch (e: Exception) { if (e is CancellationException) throw e; sharedAnalysis } }
+                    val dB = async { try { ApiClient.api.expenseBreakdown(body) } catch (e: Exception) { if (e is CancellationException) throw e; sharedBreakdown } }
+                    val prevEnd = today.withDayOfMonth(1).minusDays(1)
+                    val prevStart = prevEnd.withDayOfMonth(1)
+                    val dP = async { try { ApiClient.api.analyzeFinance(FinanceAnalysisRequestDto(start_date = prevStart.toString(), end_date = prevEnd.toString())) } catch (e: Exception) { if (e is CancellationException) throw e; sharedPrevAnalysis } }
+                    sharedAnalysis = dA.await()
+                    sharedBreakdown = dB.await()
+                    sharedPrevAnalysis = dP.await()
+                }
+            } catch (e: Exception) { if (e is CancellationException) throw e }
+        }
     }
 
     // Check notification permission
@@ -1294,6 +1317,7 @@ fun FinanceDashboardScreen(
             lastUpdated = java.time.LocalDateTime.now().toString()
             error = null
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             error = e.message ?: "Could not load finance dashboard."
         } finally {
             isLoading = false
@@ -1307,6 +1331,7 @@ fun FinanceDashboardScreen(
             learningItem = curriculum.plan.firstOrNull()
             learningBeliefs = curriculum.beliefs
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             learningError = e.message
         }
     }
@@ -1371,7 +1396,8 @@ fun FinanceDashboardScreen(
                         scope.launch {
                             try {
                                 transactionHistory = ApiClient.api.getTransactions()
-                            } catch (_: Exception) {
+                            } catch (e: Exception) {
+                                if (e is CancellationException) throw e
                                 transactionHistory = emptyList()
                             } finally {
                                 historyLoading = false
@@ -1410,22 +1436,104 @@ fun FinanceDashboardScreen(
                     Text("No transactions yet.", fontSize = 14.sp, color = Color.White.copy(alpha = 0.7f), modifier = Modifier.padding(16.dp))
                 }
             } else {
+                val allCategories = listOf("Food & Dining", "Transport", "Shopping", "Bills & Utilities", "Groceries", "Entertainment", "Health", "Education", "Investment", "Other")
+                var expandedIndex by remember { mutableStateOf(-1) }
+                var categoryDropdownIndex by remember { mutableStateOf(-1) }
+
                 transactionHistory.forEachIndexed { index, tx ->
+                    val isExpanded = expandedIndex == index
                     Card(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp)
+                            .clickable { expandedIndex = if (isExpanded) -1 else index },
                         colors = CardDefaults.cardColors(containerColor = if (index % 2 == 0) cardBg else Color(0xFF0A1525)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(tx.merchant ?: "Unknown", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
-                                Text("${tx.category ?: "Uncategorized"} • ${tx.timestamp}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(tx.merchant ?: "Unknown", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                                    Text("${tx.category ?: "Uncategorized"} • ${tx.timestamp}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                                }
+                                Text("₹${String.format("%.0f", tx.amount)}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF5252))
                             }
-                            Text("₹${String.format("%.0f", tx.amount)}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF5252))
+
+                            // ─── Expanded SMS + Category Edit ───
+                            if (isExpanded) {
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // SMS Text
+                                if (!tx.raw_message.isNullOrBlank()) {
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2340)),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Column(modifier = Modifier.padding(10.dp)) {
+                                            Text("📩 Original SMS", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = accentCyan)
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(tx.raw_message, fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f), lineHeight = 16.sp)
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                // Category Edit
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Category:", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                                    Box {
+                                        Card(
+                                            modifier = Modifier.clickable { categoryDropdownIndex = if (categoryDropdownIndex == index) -1 else index },
+                                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1A2340)),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Text(tx.category ?: "Uncategorized", fontSize = 12.sp, color = accentCyan, fontWeight = FontWeight.Medium)
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text("▼", fontSize = 10.sp, color = accentCyan)
+                                            }
+                                        }
+                                        DropdownMenu(
+                                            expanded = categoryDropdownIndex == index,
+                                            onDismissRequest = { categoryDropdownIndex = -1 },
+                                            modifier = Modifier.background(Color(0xFF1A2340))
+                                        ) {
+                                            allCategories.forEach { cat ->
+                                                DropdownMenuItem(
+                                                    text = { Text(cat, fontSize = 13.sp, color = if (cat == tx.category) accentCyan else Color.White) },
+                                                    onClick = {
+                                                        categoryDropdownIndex = -1
+                                                        if (cat != tx.category && tx.id != null) {
+                                                            scope.launch {
+                                                                try {
+                                                                    ApiClient.api.updateTransactionCategory(tx.id, UpdateCategoryRequestDto(cat))
+                                                                    // Update local list
+                                                                    transactionHistory = transactionHistory.toMutableList().also { list ->
+                                                                        list[index] = tx.copy(category = cat)
+                                                                    }
+                                                                } catch (e: Exception) {
+                                                                    if (e is CancellationException) throw e
+                                                                    // silently fail – category stays as-is
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1916,6 +2024,7 @@ fun FinanceDashboardScreen(
                                             learningError = null
                                             showLearningDialog = false
                                         } catch (e: Exception) {
+                                            if (e is CancellationException) throw e
                                             learningError = e.message ?: "Could not update."
                                         } finally {
                                             learningIsUpdating = false
@@ -1954,6 +2063,7 @@ fun FinanceDashboardScreen(
                                             learningError = null
                                             showLearningDialog = false
                                         } catch (e: Exception) {
+                                            if (e is CancellationException) throw e
                                             learningError = e.message ?: "Could not update."
                                         } finally {
                                             learningIsUpdating = false
@@ -1985,6 +2095,7 @@ fun FinanceDashboardScreen(
                                             learningError = null
                                             showLearningDialog = false
                                         } catch (e: Exception) {
+                                            if (e is CancellationException) throw e
                                             learningError = e.message ?: "Could not update."
                                         } finally {
                                             learningIsUpdating = false
@@ -2936,6 +3047,7 @@ fun WhatIfSimulationScreen(onBack: () -> Unit) {
                                     val res = ApiClient.api.synthesizeChat(body)
                                     result = res.recommendation
                                 } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
                                     error = e.message ?: "Simulation failed."
                                 } finally { isLoading = false }
                             }
@@ -3296,6 +3408,7 @@ fun AgentChatScreen(onBack: () -> Unit = {}) {
                                 val res = ApiClient.api.synthesizeChat(body)
                                 chatHistory = chatHistory + ChatTurnDto(role = "assistant", content = res.recommendation)
                             } catch (e: Exception) {
+                                if (e is CancellationException) throw e
                                 error = "Error: ${e.message}"
                             } finally { isSending = false }
                         }
@@ -3331,7 +3444,8 @@ fun TransactionParserScreen() {
     LaunchedEffect(Unit) {
         try {
             history = ApiClient.api.getTransactions()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
             history = emptyList()
         }
     }
@@ -3357,7 +3471,16 @@ fun TransactionParserScreen() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(150.dp),
-            maxLines = 5
+            maxLines = 5,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = Color(0xFF00E5A0),
+                focusedBorderColor = Color(0xFF00E5A0),
+                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                focusedLabelColor = Color(0xFF00E5A0),
+                unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
+            )
         )
         Button(
             onClick = {
@@ -3368,8 +3491,17 @@ fun TransactionParserScreen() {
                             val body = ParseMessageRequestDto(raw_message = smsText)
                             val tx = ApiClient.api.parseMessage(body)
                             parseResult =
-                                "Amount: ${tx.amount}\nMerchant: ${tx.merchant ?: "-"}\nCategory: ${tx.category ?: "-"}\nTime: ${tx.timestamp}"
+                                "Amount: ₹${tx.amount}\nMerchant: ${tx.merchant ?: "-"}\nCategory: ${tx.category ?: "-"}\nTime: ${tx.timestamp}"
+                            // Refresh history after successful parse
+                            try { history = ApiClient.api.getTransactions() } catch (_: Exception) {}
+                        } catch (e: retrofit2.HttpException) {
+                            if (e.code() == 422) {
+                                parseResult = "⚠ Not a valid debit/credit SMS.\nOnly bank transaction messages (debited/credited) are accepted."
+                            } else {
+                                parseResult = "Error: ${e.message()}"
+                            }
                         } catch (e: Exception) {
+                            if (e is CancellationException) throw e
                             parseResult = "Error: ${e.message}"
                         }
                     }
@@ -4717,6 +4849,7 @@ fun NewsScreen(
                                     appendLine(res.confidence_explanation)
                                 }
                             } catch (e: Exception) {
+                                if (e is CancellationException) throw e
                                 articleAnalysisResult = "Error: ${e.message}"
                             } finally {
                                 isAnalyzing = false
@@ -4884,12 +5017,21 @@ fun FinanceScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Transaction Parser", style = MaterialTheme.typography.titleMedium)
+        Text("Transaction Parser", style = MaterialTheme.typography.titleMedium, color = Color.White)
         OutlinedTextField(
             value = smsText,
             onValueChange = { smsText = it },
             label = { Text("Paste transaction SMS here") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = Color(0xFF00E5A0),
+                focusedBorderColor = Color(0xFF00E5A0),
+                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
+                focusedLabelColor = Color(0xFF00E5A0),
+                unfocusedLabelColor = Color.White.copy(alpha = 0.6f)
+            )
         )
         Button(
             onClick = {
@@ -4900,8 +5042,15 @@ fun FinanceScreen() {
                             val body = ParseMessageRequestDto(raw_message = smsText)
                             val tx = ApiClient.api.parseMessage(body)
                             parseResult =
-                                "Amount: ${tx.amount}\nMerchant: ${tx.merchant ?: "-"}\nCategory: ${tx.category ?: "-"}\nTime: ${tx.timestamp}"
+                                "Amount: ₹${tx.amount}\nMerchant: ${tx.merchant ?: "-"}\nCategory: ${tx.category ?: "-"}\nTime: ${tx.timestamp}"
+                        } catch (e: retrofit2.HttpException) {
+                            if (e.code() == 422) {
+                                parseResult = "⚠ Not a valid debit/credit SMS.\nOnly bank transaction messages are accepted."
+                            } else {
+                                parseResult = "Error: ${e.message()}"
+                            }
                         } catch (e: Exception) {
+                            if (e is CancellationException) throw e
                             parseResult = "Error: ${e.message}"
                         }
                     }
@@ -4953,6 +5102,7 @@ fun FinanceScreen() {
                             // Pre-fill finance insight field to help with synthesis
                             financeInsight = res.message
                         } catch (e: Exception) {
+                            if (e is CancellationException) throw e
                             financeResult = "Error: ${e.message}"
                         }
                     }
@@ -4999,6 +5149,7 @@ fun FinanceScreen() {
                             // Pre-fill news insight for synthesis
                             newsInsight = res.summary
                         } catch (e: Exception) {
+                            if (e is CancellationException) throw e
                             newsResult = "Error: ${e.message}"
                         }
                     }
@@ -5049,6 +5200,7 @@ fun FinanceScreen() {
                                 appendLine("Rationale: ${res.rationale}")
                             }
                         } catch (e: Exception) {
+                            if (e is CancellationException) throw e
                             recoResult = "Error: ${e.message}"
                         }
                     }
@@ -5089,6 +5241,7 @@ fun LearnScreen() {
                 val response = ApiClient.api.getNextCard()
                 currentCard = response.card
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 error = e.message ?: "Failed to load learning card."
             } finally {
                 isLoading = false
@@ -5112,6 +5265,7 @@ fun LearnScreen() {
                 )
                 feedback = response
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 error = e.message ?: "Failed to submit answer."
             } finally {
                 isSubmitting = false

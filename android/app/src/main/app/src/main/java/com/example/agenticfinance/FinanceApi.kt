@@ -3,6 +3,8 @@ package com.example.agenticfinance
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Path
 
 interface FinanceApi {
 
@@ -72,6 +74,12 @@ interface FinanceApi {
     suspend fun submitAnswer(
         @Body body: SubmitAnswerRequestDto
     ): SubmitAnswerResponseDto
+
+    @PUT("/api/transactions/{id}/category")
+    suspend fun updateTransactionCategory(
+        @Path("id") id: Int,
+        @Body body: UpdateCategoryRequestDto
+    ): UpdateCategoryResponseDto
 }
 
 data class BeliefStateDto(
@@ -111,10 +119,22 @@ data class CurriculumUpdateRequestDto(
 )
 
 data class TransactionDto(
+    val id: Int? = null,
     val amount: Double,
     val merchant: String?,
     val category: String?,
-    val timestamp: String
+    val timestamp: String,
+    val raw_message: String? = null
+)
+
+data class UpdateCategoryRequestDto(
+    val category: String
+)
+
+data class UpdateCategoryResponseDto(
+    val status: String,
+    val id: Int,
+    val category: String
 )
 
 data class FinanceAnalysisRequestDto(

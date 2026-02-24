@@ -11,11 +11,11 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    // ── Toggle between local dev and Render cloud ──
+    // ── Toggle between local dev and HF Spaces cloud ──
     // Local emulator:  "http://10.0.2.2:8001"
     // Local device:    "http://<your-laptop-ip>:8001"
-    // Render cloud:    "https://<your-app>.onrender.com"
-    private const val BASE_URL = "http://10.0.2.2:8001"
+    // HF Spaces cloud: "https://jai005-pinance-backend.hf.space"
+    private const val BASE_URL = "https://jai005-pinance-backend.hf.space"
 
     private class AuthInterceptor : Interceptor {
         override fun intercept(chain: Interceptor.Chain): Response {
@@ -49,9 +49,9 @@ object ApiClient {
     }
 
     private val okHttp = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .writeTimeout(120, TimeUnit.SECONDS)
         .addInterceptor(AuthInterceptor())
         .build()
 

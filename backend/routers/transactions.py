@@ -179,6 +179,50 @@ def is_credit_message(raw_message: str) -> bool:
     return False
 
 
+# ── Spam / promotional patterns that should NEVER be treated as transactions ──
+_SPAM_KEYWORDS = [
+    "recharge", "offer", "cashback offer", "subscribe", "plan",
+    "activate", "upgrade", "free", "win", "prize",
+    "congratulations", "claim", "hurry", "limited time",
+    "coupon", "discount code", "promo", "otp", "one time password",
+    "verify", "verification code", "login code",
+]
+
+# Terms that strongly signal a real bank SMS
+_BANK_SIGNALS = [
+    "a/c", "acct", "account", "upi", "neft", "imps", "rtgs",
+    "atm", "bank", "bal", "avl bal", "available balance",
+    "xxxx", "ending",
+]
+
+
+def is_financial_sms(message: str) -> bool:
+    """Return True only for genuine debit / credit bank SMS.
+
+    Requires:
+      1. A recognisable money amount (Rs / INR / rupees + number)
+      2. At least one debit/credit keyword **or** one strong bank signal
+      3. NOT primarily a spam / promotional message
+    """
+    text = message.lower()
+
+    # ── Quick spam rejection ──
+    spam_hits = sum(1 for kw in _SPAM_KEYWORDS if kw in text)
+    if spam_hits >= 2:
+        return False
+
+    # ── Must contain a money amount ──
+    if AMOUNT_PATTERN.search(message) is None:
+        return False
+
+    # ── Must contain a debit/credit keyword OR a bank signal term ──
+    has_txn_keyword = any(kw in text for kw in _CREDIT_KEYWORDS) or \
+                      any(kw in text for kw in _DEBIT_KEYWORDS)
+    has_bank_signal = any(kw in text for kw in _BANK_SIGNALS)
+
+    return has_txn_keyword or has_bank_signal
+
+
 def _parse_amount(message: str) -> Optional[float]:
     match = AMOUNT_PATTERN.search(message)
     if not match:
@@ -222,6 +266,13 @@ async def parse_message(
     payload: ParseMessageRequest,
     user_id: str = Depends(get_current_user)
 ) -> Transaction:
+    # ── Reject non-financial messages (spam, OTP, promos, other app notifs) ──
+    if not is_financial_sms(payload.raw_message):
+        raise HTTPException(
+            status_code=422,
+            detail="Not a valid debit/credit transaction SMS"
+        )
+
     amount = _parse_amount(payload.raw_message)
     merchant = _parse_merchant(payload.raw_message)
     # First do a quick rule-based inference so we always have
