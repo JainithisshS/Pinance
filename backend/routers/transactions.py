@@ -9,6 +9,7 @@ from ..db import init_db, insert_transaction, get_connection, update_transaction
 from ..models import ParseMessageRequest, Transaction
 from ..category_model import predict_category
 from ..auth import get_current_user
+import os
 
 
 router = APIRouter()
@@ -17,6 +18,36 @@ router = APIRouter()
 @router.on_event("startup")
 async def startup_event() -> None:
     init_db()
+    # One-time cleanup: remove junk transactions (amount=0 or non-financial)
+    _cleanup_junk_transactions()
+
+
+def _cleanup_junk_transactions():
+    """Delete all transactions with amount=0 (junk from non-SMS notifications)."""
+    USE_SUPABASE = bool(os.getenv("SUPABASE_URL"))
+    if USE_SUPABASE:
+        try:
+            from ..supabase_client import get_supabase
+            supabase = get_supabase()
+            result = supabase.table("transactions").delete().eq("amount", 0).execute()
+            print(f"[CLEANUP] Deleted {len(result.data)} junk transactions (amount=0) from Supabase")
+            # Also delete all existing transactions to start fresh
+            result2 = supabase.table("transactions").delete().gt("id", 0).execute()
+            print(f"[CLEANUP] Cleared all {len(result2.data)} old transactions from Supabase")
+        except Exception as e:
+            print(f"[CLEANUP] Supabase cleanup failed: {e}")
+    else:
+        import sqlite3
+        from pathlib import Path
+        db_path = Path(__file__).parent.parent / "transactions.db"
+        try:
+            conn = sqlite3.connect(db_path)
+            cursor = conn.execute("DELETE FROM transactions")
+            conn.commit()
+            print(f"[CLEANUP] Deleted {cursor.rowcount} transactions from SQLite")
+            conn.close()
+        except Exception as e:
+            print(f"[CLEANUP] SQLite cleanup failed: {e}")
 
 
 @router.get("/health")
