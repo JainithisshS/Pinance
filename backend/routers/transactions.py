@@ -2,9 +2,10 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel as _BaseModel
 
-from ..db import init_db, insert_transaction, get_connection
+from ..db import init_db, insert_transaction, get_connection, update_transaction_category
 from ..models import ParseMessageRequest, Transaction
 from ..category_model import predict_category
 from ..auth import get_current_user
@@ -298,4 +299,20 @@ async def list_transactions(
         for row in rows
     ]
 
+
+class UpdateCategoryRequest(_BaseModel):
+    category: str
+
+
+@router.put("/transactions/{transaction_id}/category")
+async def update_category(
+    transaction_id: int,
+    payload: UpdateCategoryRequest,
+    user_id: str = Depends(get_current_user),
+):
+    """Allow user to manually change the category of a transaction."""
+    updated = update_transaction_category(transaction_id, user_id, payload.category)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return {"status": "ok", "id": transaction_id, "category": payload.category}
 

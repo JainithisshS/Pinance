@@ -184,3 +184,35 @@ def insert_risk_log(data: Dict[str, Any]) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def update_transaction_category(transaction_id: int, user_id: str, new_category: str) -> bool:
+    """Update the category of a transaction.
+
+    Returns:
+        bool: True if updated successfully, False otherwise
+    """
+    if USE_SUPABASE:
+        try:
+            supabase = get_supabase()
+            result = (
+                supabase.table("transactions")
+                .update({"category": new_category})
+                .eq("id", transaction_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+            return len(result.data) > 0
+        except Exception as e:
+            print(f"[DB] Supabase update failed: {e}. Falling back to SQLite")
+
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            "UPDATE transactions SET category = ? WHERE id = ? AND user_id = ?",
+            (new_category, transaction_id, user_id),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
