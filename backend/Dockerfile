@@ -8,16 +8,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first (Docker cache layer)
-COPY backend/requirements.txt ./backend/
+COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r backend/requirements.txt && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir tf-keras
 
-# Copy backend code
-COPY backend/ ./backend/
+# Copy all backend code
+COPY . ./backend/
 
-# Expose port (Render sets PORT env var)
-EXPOSE 8001
+# HF Spaces uses port 7860 by default
+EXPOSE 7860
 
-# Run with uvicorn — Render sets $PORT
-CMD ["sh", "-c", "cd /app && python -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8001}"]
+# Run with uvicorn
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
