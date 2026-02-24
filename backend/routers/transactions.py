@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel as _BaseModel
 
-from ..db import init_db, insert_transaction, get_connection, update_transaction_category
+from ..db import init_db, insert_transaction, get_connection, update_transaction_category, get_user_transactions
 from ..models import ParseMessageRequest, Transaction
 from ..category_model import predict_category
 from ..auth import get_current_user
@@ -271,30 +271,17 @@ async def list_transactions(
     manually-pasted and notification-captured messages.
     """
 
-    conn = get_connection()
-    try:
-        rows = conn.execute(
-            """
-            SELECT id, amount, merchant, category, currency, timestamp, raw_message
-            FROM transactions
-            WHERE user_id = ?
-            ORDER BY datetime(timestamp) DESC
-            LIMIT ?
-            """,
-            (user_id, limit),
-        ).fetchall()
-    finally:
-        conn.close()
+    rows = get_user_transactions(user_id, limit)
 
     return [
         Transaction(
             id=row["id"],
             amount=float(row["amount"] or 0.0),
-            merchant=row["merchant"],
-            category=row["category"],
-            currency=row["currency"] or "INR",
-            timestamp=datetime.fromisoformat(row["timestamp"]),
-            raw_message=row["raw_message"],
+            merchant=row.get("merchant"),
+            category=row.get("category"),
+            currency=row.get("currency") or "INR",
+            timestamp=datetime.fromisoformat(str(row["timestamp"])),
+            raw_message=row.get("raw_message", ""),
         )
         for row in rows
     ]

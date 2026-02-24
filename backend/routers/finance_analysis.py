@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from ..db import get_connection, insert_risk_log
+from ..db import get_connection, insert_risk_log, get_user_transactions_by_date
 from ..auth import get_current_user
 from ..risk_model import MonthlyFeatures, explain_risk, predict_risk
 from ..services.groq_client import get_groq_client
@@ -67,18 +67,7 @@ async def analyze_finance(payload: FinanceAnalysisRequest, user_id: str = Depend
     start_dt = datetime.combine(payload.start_date, datetime.min.time())
     end_dt = datetime.combine(payload.end_date, datetime.max.time())
 
-    conn = get_connection()
-    try:
-        rows = conn.execute(
-            """
-            SELECT amount, category, timestamp, raw_message
-            FROM transactions
-            WHERE user_id = ? AND timestamp BETWEEN ? AND ?
-            """,
-            (user_id, start_dt.isoformat(), end_dt.isoformat()),
-        ).fetchall()
-    finally:
-        conn.close()
+    rows = get_user_transactions_by_date(user_id, start_dt.isoformat(), end_dt.isoformat())
 
     if not rows:
         summary = TransactionSummary(
@@ -115,10 +104,10 @@ async def analyze_finance(payload: FinanceAnalysisRequest, user_id: str = Depend
     fixed_expenses_total = 0.0
     variable_expenses_total = 0.0
     for row in rows:
-        cat = row["category"] or "Other"
+        cat = row.get("category") or "Other"
         category_counts[cat] = category_counts.get(cat, 0) + 1
-        amount = float(row["amount"] or 0.0)
-        is_credit = is_credit_message(row["raw_message"] or "")
+        amount = float(row.get("amount") or 0.0)
+        is_credit = is_credit_message(row.get("raw_message") or "")
         if is_credit:
             total_income += amount
         else:
@@ -407,25 +396,14 @@ async def expense_breakdown(payload: FinanceAnalysisRequest, user_id: str = Depe
     start_dt = datetime.combine(payload.start_date, datetime.min.time())
     end_dt = datetime.combine(payload.end_date, datetime.max.time())
 
-    conn = get_connection()
-    try:
-        rows = conn.execute(
-            """
-            SELECT category, amount, raw_message
-            FROM transactions
-            WHERE user_id = ? AND timestamp BETWEEN ? AND ?
-            """,
-            (user_id, start_dt.isoformat(), end_dt.isoformat()),
-        ).fetchall()
-    finally:
-        conn.close()
+    rows = get_user_transactions_by_date(user_id, start_dt.isoformat(), end_dt.isoformat())
 
     aggregates: dict[str, ExpenseCategorySummary] = {}
 
     for row in rows:
-        cat = row["category"] or "Other"
-        amount = float(row["amount"] or 0.0)
-        if is_credit_message(row["raw_message"] or ""):
+        cat = row.get("category") or "Other"
+        amount = float(row.get("amount") or 0.0)
+        if is_credit_message(row.get("raw_message") or ""):
             # Skip income for expense breakdown
             continue
         if cat not in aggregates:

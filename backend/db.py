@@ -103,6 +103,69 @@ def init_db() -> None:
         conn.close()
 
 
+from typing import List
+
+
+def get_user_transactions(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+    """Fetch recent transactions for a user (Supabase or SQLite)."""
+    if USE_SUPABASE:
+        try:
+            supabase = get_supabase()
+            result = (
+                supabase.table("transactions")
+                .select("id, amount, merchant, category, currency, timestamp, raw_message")
+                .eq("user_id", user_id)
+                .order("timestamp", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return result.data
+        except Exception as e:
+            print(f"[DB] Supabase fetch failed: {e}. Falling back to SQLite")
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, amount, merchant, category, currency, timestamp, raw_message "
+            "FROM transactions WHERE user_id = ? ORDER BY datetime(timestamp) DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def get_user_transactions_by_date(user_id: str, start_iso: str, end_iso: str) -> List[Dict[str, Any]]:
+    """Fetch transactions for a user within a date range (Supabase or SQLite)."""
+    if USE_SUPABASE:
+        try:
+            supabase = get_supabase()
+            result = (
+                supabase.table("transactions")
+                .select("id, amount, merchant, category, currency, timestamp, raw_message")
+                .eq("user_id", user_id)
+                .gte("timestamp", start_iso)
+                .lte("timestamp", end_iso)
+                .order("timestamp", desc=True)
+                .execute()
+            )
+            return result.data
+        except Exception as e:
+            print(f"[DB] Supabase date-range fetch failed: {e}. Falling back to SQLite")
+
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, amount, merchant, category, currency, timestamp, raw_message "
+            "FROM transactions WHERE user_id = ? AND timestamp BETWEEN ? AND ? "
+            "ORDER BY datetime(timestamp) DESC",
+            (user_id, start_iso, end_iso),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
 def insert_transaction(data: Dict[str, Any]) -> int:
     """Insert transaction into database (Supabase or SQLite).
     
