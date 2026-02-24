@@ -17,8 +17,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy backend code
 COPY backend/ ./backend/
 
-# Expose port (Render sets PORT env var)
-EXPOSE 8001
+# HF Spaces uses port 7860 by default
+EXPOSE 7860
 
-# Run with uvicorn — Render sets $PORT
-CMD ["sh", "-c", "cd /app && python -m uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8001}"]
+# Run with uvicorn — HF Spaces expects port 7860
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]

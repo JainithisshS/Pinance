@@ -1,3 +1,12 @@
+---
+title: Pinance Backend
+emoji: 💰
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+---
+
 # Agentic Finance System
 
 End-to-end personal finance and market insight assistant.
