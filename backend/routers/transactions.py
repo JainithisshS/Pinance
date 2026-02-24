@@ -302,12 +302,7 @@ async def parse_message(
     payload: ParseMessageRequest,
     user_id: str = Depends(get_current_user)
 ) -> Transaction:
-    # ── Reject non-financial messages (spam, OTP, promos, other app notifs) ──
-    if not is_financial_sms(payload.raw_message):
-        raise HTTPException(
-            status_code=422,
-            detail="Not a valid debit/credit transaction SMS"
-        )
+    print(f"[parse_message] user={user_id} raw={payload.raw_message[:100]}")
 
     amount = _parse_amount(payload.raw_message)
     merchant = _parse_merchant(payload.raw_message)
@@ -331,13 +326,6 @@ async def parse_message(
         timestamp=timestamp,
         raw_message=payload.raw_message,
     )
-
-    # ── Final guard: reject if amount is 0 (no real money amount found) ──
-    if transaction.amount <= 0:
-        raise HTTPException(
-            status_code=422,
-            detail="Could not extract a valid transaction amount from the message"
-        )
 
     db_data = {
         "user_id": user_id,

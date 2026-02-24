@@ -1,7 +1,9 @@
 package com.example.agenticfinance
 
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -94,6 +96,33 @@ fun AgenticFinanceApp(
     onSignOut: () -> Unit
 ) {
     val context = LocalContext.current
+
+    // ── Check & prompt for Notification Access ──
+    var showNotiPrompt by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val cn = ComponentName(context, NotificationListener::class.java)
+        val flat = Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
+        val enabled = flat != null && flat.contains(cn.flattenToString())
+        if (!enabled) showNotiPrompt = true
+    }
+    if (showNotiPrompt) {
+        AlertDialog(
+            onDismissRequest = { showNotiPrompt = false },
+            title = { Text("Enable Notification Access", color = Color.White) },
+            text = { Text("To auto-read SMS transactions, please enable Notification Access for this app in the next screen.", color = Color.White.copy(alpha = 0.8f)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showNotiPrompt = false
+                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                }) { Text("Open Settings", color = Color(0xFF00E5A0)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNotiPrompt = false }) { Text("Later", color = Color.White.copy(alpha = 0.6f)) }
+            },
+            containerColor = Color(0xFF1A237E)
+        )
+    }
+
     var profile by remember {
         mutableStateOf(
             loadUserProfile(context) ?: UserProfile(
