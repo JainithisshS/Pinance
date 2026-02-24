@@ -107,7 +107,8 @@ from typing import List
 
 
 def get_user_transactions(user_id: str, limit: int = 50) -> List[Dict[str, Any]]:
-    """Fetch recent transactions for a user (Supabase or SQLite)."""
+    """Fetch recent transactions for a user (Supabase or SQLite).
+    Only returns rows with amount > 0 (real transactions)."""
     if USE_SUPABASE:
         try:
             supabase = get_supabase()
@@ -115,6 +116,7 @@ def get_user_transactions(user_id: str, limit: int = 50) -> List[Dict[str, Any]]
                 supabase.table("transactions")
                 .select("id, amount, merchant, category, currency, timestamp, raw_message")
                 .eq("user_id", user_id)
+                .gt("amount", 0)
                 .order("timestamp", desc=True)
                 .limit(limit)
                 .execute()
@@ -127,7 +129,7 @@ def get_user_transactions(user_id: str, limit: int = 50) -> List[Dict[str, Any]]
     try:
         rows = conn.execute(
             "SELECT id, amount, merchant, category, currency, timestamp, raw_message "
-            "FROM transactions WHERE user_id = ? ORDER BY datetime(timestamp) DESC LIMIT ?",
+            "FROM transactions WHERE user_id = ? AND amount > 0 ORDER BY datetime(timestamp) DESC LIMIT ?",
             (user_id, limit),
         ).fetchall()
         return [dict(row) for row in rows]
@@ -136,7 +138,8 @@ def get_user_transactions(user_id: str, limit: int = 50) -> List[Dict[str, Any]]
 
 
 def get_user_transactions_by_date(user_id: str, start_iso: str, end_iso: str) -> List[Dict[str, Any]]:
-    """Fetch transactions for a user within a date range (Supabase or SQLite)."""
+    """Fetch transactions for a user within a date range (Supabase or SQLite).
+    Only returns rows with amount > 0 (real transactions)."""
     if USE_SUPABASE:
         try:
             supabase = get_supabase()
@@ -144,6 +147,7 @@ def get_user_transactions_by_date(user_id: str, start_iso: str, end_iso: str) ->
                 supabase.table("transactions")
                 .select("id, amount, merchant, category, currency, timestamp, raw_message")
                 .eq("user_id", user_id)
+                .gt("amount", 0)
                 .gte("timestamp", start_iso)
                 .lte("timestamp", end_iso)
                 .order("timestamp", desc=True)
@@ -157,7 +161,7 @@ def get_user_transactions_by_date(user_id: str, start_iso: str, end_iso: str) ->
     try:
         rows = conn.execute(
             "SELECT id, amount, merchant, category, currency, timestamp, raw_message "
-            "FROM transactions WHERE user_id = ? AND timestamp BETWEEN ? AND ? "
+            "FROM transactions WHERE user_id = ? AND amount > 0 AND timestamp BETWEEN ? AND ? "
             "ORDER BY datetime(timestamp) DESC",
             (user_id, start_iso, end_iso),
         ).fetchall()
@@ -245,6 +249,37 @@ def insert_risk_log(data: Dict[str, Any]) -> None:
             data,
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_user_transactions(user_id: str) -> int:
+    """Delete ALL transactions for a user. Returns count deleted."""
+    deleted = 0
+    if USE_SUPABASE:
+        try:
+            supabase = get_supabase()
+            result = (
+                supabase.table("transactions")
+                .delete()
+                .eq("user_id", user_id)
+                .execute()
+            )
+            deleted = len(result.data)
+            print(f"[DB] Deleted {deleted} transactions from Supabase for {user_id}")
+            return deleted
+        except Exception as e:
+            print(f"[DB] Supabase delete failed: {e}. Falling back to SQLite")
+
+    conn = get_connection()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM transactions WHERE user_id = ?", (user_id,)
+        )
+        conn.commit()
+        deleted = cursor.rowcount
+        print(f"[DB] Deleted {deleted} transactions from SQLite for {user_id}")
+        return deleted
     finally:
         conn.close()
 

@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel as _BaseModel
 
-from ..db import init_db, insert_transaction, get_connection, update_transaction_category, get_user_transactions
+from ..db import init_db, insert_transaction, get_connection, update_transaction_category, get_user_transactions, delete_user_transactions
 from ..models import ParseMessageRequest, Transaction
 from ..category_model import predict_category
 from ..auth import get_current_user
@@ -296,6 +296,13 @@ async def parse_message(
         raw_message=payload.raw_message,
     )
 
+    # ── Final guard: reject if amount is 0 (no real money amount found) ──
+    if transaction.amount <= 0:
+        raise HTTPException(
+            status_code=422,
+            detail="Could not extract a valid transaction amount from the message"
+        )
+
     db_data = {
         "user_id": user_id,
         "amount": transaction.amount,
@@ -353,4 +360,13 @@ async def update_category(
     if not updated:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return {"status": "ok", "id": transaction_id, "category": payload.category}
+
+
+@router.delete("/transactions")
+async def clear_transactions(
+    user_id: str = Depends(get_current_user),
+):
+    """Delete ALL transactions for the current user."""
+    deleted = delete_user_transactions(user_id)
+    return {"status": "ok", "deleted": deleted}
 
