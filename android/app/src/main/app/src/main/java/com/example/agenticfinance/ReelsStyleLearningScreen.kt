@@ -536,7 +536,8 @@ fun ReelsStyleLearningScreen(onBackClick: () -> Unit = {}) {
         val isAnswered = answeredMap.containsKey(meta.card.id)
         if (isLastCard && isAnswered && !isLoadingNext) {
             isLoadingNext = true
-            val next = fetchCardWithMeta(exclude = correctlyAnsweredConcepts)
+            val excludeConcepts = cardsWithMeta.map { it.card.concept_id }.toSet()
+            val next = fetchCardWithMeta(exclude = excludeConcepts)
             cardsWithMeta = cardsWithMeta + next
             isLoadingNext = false
         }
@@ -619,6 +620,17 @@ fun ReelsStyleLearningScreen(onBackClick: () -> Unit = {}) {
 
                             scope.launch {
                                 kotlinx.coroutines.delay(2200)
+                                // If this is the last card, fetch the next one first
+                                if (page == cardsWithMeta.size - 1 && !isLoadingNext) {
+                                    isLoadingNext = true
+                                    try {
+                                        val excludeConcepts = cardsWithMeta.map { it.card.concept_id }.toSet()
+                                        val next = fetchCardWithMeta(exclude = excludeConcepts)
+                                        cardsWithMeta = cardsWithMeta + next
+                                    } catch (_: Exception) {}
+                                    isLoadingNext = false
+                                }
+                                // Now scroll to next page
                                 if (page < cardsWithMeta.size - 1) {
                                     pagerState.animateScrollToPage(page + 1)
                                 }
@@ -1098,6 +1110,12 @@ fun ReelsCard(
 ) {
     var selectedAnswer by remember(card.id) { mutableStateOf<Int?>(null) }
     var showQuiz by remember(card.id) { mutableStateOf(false) }
+
+    // Auto-show quiz after a short delay so users don't miss it
+    LaunchedEffect(card.id) {
+        kotlinx.coroutines.delay(1500)
+        showQuiz = true
+    }
     val accent = CONCEPT_ACCENTS[card.concept_id] ?: Color(0xFF00E5FF)
 
     val animatedMastery by animateFloatAsState(

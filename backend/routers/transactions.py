@@ -31,9 +31,9 @@ def _cleanup_junk_transactions():
             supabase = get_supabase()
             result = supabase.table("transactions").delete().eq("amount", 0).execute()
             print(f"[CLEANUP] Deleted {len(result.data)} junk transactions (amount=0) from Supabase")
-            # Also delete all existing transactions to start fresh
-            result2 = supabase.table("transactions").delete().gt("id", 0).execute()
-            print(f"[CLEANUP] Cleared all {len(result2.data)} old transactions from Supabase")
+            # Removed: Also delete all existing transactions to start fresh
+            # result2 = supabase.table("transactions").delete().gt("id", 0).execute()
+            # print(f"[CLEANUP] Cleared all {len(result2.data)} old transactions from Supabase")
         except Exception as e:
             print(f"[CLEANUP] Supabase cleanup failed: {e}")
     else:
