@@ -60,10 +60,13 @@ async def health_check():
 # 2. Rupees suffix: "500 rupees"
 # 3. After keywords: "Debited: 1000", "Amount: 500"
 AMOUNT_PATTERN = re.compile(
-    r"(?:inr|rs\.?|rs\s*\.)\s*([0-9,]+\.?[0-9]*)|"  # Group 1: Standard Rs/INR prefix
-    r"([0-9,]+\.?[0-9]*)\s*rupees|"  # Group 2: "500 rupees" format
-    r"(?:debited|credited|spent|amount|transaction)[\s:]+([0-9,]+\.?[0-9]*)",  # Group 3: After keywords
-    re.IGNORECASE  # Case-insensitive flag
+    # 1) Currency prefix: Rs / INR / ₹  followed by number
+    r"(?:inr|rs\.?|rs\s*\.|₹)\s*([0-9,]+\.?[0-9]*)|"
+    # 2) Number followed by 'rupees'
+    r"([0-9,]+\.?[0-9]*)\s*rupees|"
+    # 3) Keywords like 'debited' or 'credited' possibly followed by small words ('by','for') then a number
+    r"(?:debited|credited|spent|amount|transaction)(?:\s*(?:by|for|of|:)?\s*)([0-9,]+\.?[0-9]*)",
+    re.IGNORECASE,
 )
 MERCHANT_PATTERN = re.compile(r"at\s+([A-Za-z0-9 &.-]+)")
 
@@ -260,17 +263,40 @@ def is_financial_sms(message: str) -> bool:
 
 
 def _parse_amount(message: str) -> Optional[float]:
+    # Primary attempt: the comprehensive AMOUNT_PATTERN
     match = AMOUNT_PATTERN.search(message)
-    if not match:
-        return None
-    # Check all three capture groups (one for each pattern alternative)
-    value = match.group(1) or match.group(2) or match.group(3)
-    if value:
-        value = value.replace(",", "")
+    if match:
+        # match groups: group(1) or group(2) or group(3)
+        value = None
+        try:
+            value = match.group(1) or match.group(2) or match.group(3)
+        except IndexError:
+            value = None
+        if value:
+            value = value.replace(",", "")
+            try:
+                return float(value)
+            except ValueError:
+                return None
+
+    # Fallback: look specifically for 'debited' or 'credited' followed by up to 15 non-digit chars then a number
+    kb = re.search(r"(?:debited|credited)\D{0,15}([0-9,]+\.?[0-9]*)", message, re.IGNORECASE)
+    if kb:
+        value = kb.group(1).replace(",", "")
         try:
             return float(value)
         except ValueError:
             return None
+
+    # Last resort: any standalone number with at least two digits and optional decimals
+    anynum = re.search(r"([0-9]{2,}[0-9,]*\.?[0-9]*)", message)
+    if anynum:
+        v = anynum.group(1).replace(",", "")
+        try:
+            return float(v)
+        except ValueError:
+            return None
+
     return None
 
 
@@ -302,9 +328,10 @@ async def parse_message(
     payload: ParseMessageRequest,
     user_id: str = Depends(get_current_user)
 ) -> Transaction:
-    print(f"[parse_message] user={user_id} raw={payload.raw_message[:100]}")
+    print(f"[parse_message] user={user_id} raw={payload.raw_message[:200]}")
 
     amount = _parse_amount(payload.raw_message)
+    print(f"[parse_message] parsed_amount={amount}")
     merchant = _parse_merchant(payload.raw_message)
     # First do a quick rule-based inference so we always have
     # a sensible default category.
@@ -393,4 +420,58 @@ async def clear_transactions(
     """Delete ALL transactions for the current user."""
     deleted = delete_user_transactions(user_id)
     return {"status": "ok", "deleted": deleted}
+
+
+@router.post("/seed_dummy")
+async def seed_dummy_transactions(
+    user_id: str = Depends(get_current_user),
+):
+    """Insert realistic dummy income & expense transactions for demo/testing."""
+    from datetime import timedelta
+    now = datetime.now()
+
+    dummy_transactions = [
+        # ── INCOME ──
+        {"amount": 65000.0, "merchant": "Employer Pvt Ltd",    "category": "Income",          "raw_message": "Salary credited Rs 65,000 to your A/C XXXX1234 by NEFT from Employer Pvt Ltd"},
+        {"amount": 12000.0, "merchant": "Freelance Client",    "category": "Income",          "raw_message": "Rs 12,000 credited to your A/C via UPI from freelance-client@oksbi"},
+        {"amount": 2500.0,  "merchant": "Zerodha Dividend",    "category": "Income",          "raw_message": "INR 2,500 credited — dividend payout from Zerodha demat account"},
+        # ── EXPENSES ──
+        {"amount": 450.0,   "merchant": "Swiggy",              "category": "Food & Dining",   "raw_message": "Rs 450 debited from A/C XXXX1234 for Swiggy order at Pizza Hut"},
+        {"amount": 280.0,   "merchant": "Uber India",          "category": "Transport",       "raw_message": "INR 280 debited for Uber trip from Home to Office via UPI"},
+        {"amount": 1999.0,  "merchant": "Amazon",              "category": "Shopping",        "raw_message": "Rs 1,999 debited for Amazon.in purchase — Wireless Earbuds"},
+        {"amount": 15000.0, "merchant": "Landlord",            "category": "Bills & Utilities","raw_message": "Rs 15,000 debited — monthly rent transfer to landlord via NEFT"},
+        {"amount": 1800.0,  "merchant": "Tata Power",          "category": "Bills & Utilities","raw_message": "INR 1,800 debited for Tata Power electricity bill payment"},
+        {"amount": 649.0,   "merchant": "Netflix",             "category": "Entertainment",   "raw_message": "Rs 649 debited for Netflix India monthly subscription renewal"},
+        {"amount": 2350.0,  "merchant": "BigBasket",           "category": "Groceries",       "raw_message": "Rs 2,350 debited for BigBasket grocery order — weekly essentials"},
+        {"amount": 5000.0,  "merchant": "Zerodha",             "category": "Investment",      "raw_message": "INR 5,000 debited for SIP investment via Zerodha — Nifty 50 Index Fund"},
+        {"amount": 350.0,   "merchant": "Zomato",              "category": "Food & Dining",   "raw_message": "Rs 350 debited via UPI for Zomato order — Biryani"},
+        {"amount": 199.0,   "merchant": "Rapido",              "category": "Transport",       "raw_message": "INR 199 debited for Rapido bike ride — Mall to Home"},
+        {"amount": 1500.0,  "merchant": "Apollo Pharmacy",     "category": "Health",          "raw_message": "Rs 1,500 debited at Apollo Pharmacy — medicines"},
+        {"amount": 799.0,   "merchant": "Coursera",            "category": "Education",       "raw_message": "Rs 799 debited for Coursera monthly subscription — ML Specialization"},
+    ]
+
+    inserted = []
+    for i, txn in enumerate(dummy_transactions):
+        # Spread transactions over the last 25 days
+        txn_date = now - timedelta(days=25 - i * 2)
+        db_data = {
+            "user_id": user_id,
+            "amount": txn["amount"],
+            "merchant": txn["merchant"],
+            "category": txn["category"],
+            "currency": "INR",
+            "timestamp": txn_date.isoformat(),
+            "raw_message": txn["raw_message"],
+        }
+        try:
+            txn_id = insert_transaction(db_data)
+            inserted.append({"id": txn_id, "amount": txn["amount"], "merchant": txn["merchant"], "category": txn["category"]})
+        except Exception as e:
+            print(f"[SEED] Failed to insert dummy txn: {e}")
+
+    return {
+        "status": "ok",
+        "inserted": len(inserted),
+        "transactions": inserted,
+    }
 
