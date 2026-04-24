@@ -118,6 +118,52 @@ Each agent uses a two-tier pipeline:
 
 The system also includes a Bayesian Knowledge Tracing learning engine for finance education.
 
+## System Architecture Flow Chart
+
+```mermaid
+flowchart TD
+	U[User]
+	A[Android App\nKotlin + Jetpack Compose]
+	N[Notification Listener\nSMS / UPI Capture]
+	API[FastAPI Backend\nPython 3.11]
+
+	RA[Agent A\nFinance Analyzer]
+	RB[Agent B\nNews + Market Intelligence]
+	RC[Agent C\nDecision Synthesizer + RAG]
+	RL[Adaptive Learning Engine\nBayesian Knowledge Tracing]
+
+	DB[(SQLite / Supabase PostgreSQL)]
+	KG[(RAG Knowledge Base)]
+	LLM[Groq LLaMA 3.3 70B]
+	EXT[External Data\nRSS + Market Feeds]
+
+	U --> A
+	A --> N
+	A --> API
+	N --> API
+
+	API --> RA
+	API --> RB
+	API --> RC
+	API --> RL
+
+	RA --> DB
+	RB --> EXT
+	RB --> DB
+	RC --> KG
+	RC --> DB
+	RL --> DB
+
+	RA --> LLM
+	RB --> LLM
+	RC --> LLM
+
+	LLM --> API
+	DB --> API
+	API --> A
+	A --> U
+```
+
 ## Key Features
 
 - Automatic SMS and UPI notification parsing
