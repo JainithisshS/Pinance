@@ -13,72 +13,72 @@ The screenshots below are shown in the order they were captured from the `pinanc
 <table>
 	<tr>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/login.jpeg" alt="Login screen" width="100%" />
-			<br /><sub>1. Login screen</sub>
+			<img src="assets/app-screens/02-login-screen.jpeg" alt="Login screen" width="100%" />
+			<br /><sub>2. Login screen</sub>
 		</td>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/dashboard.jpeg" alt="Home dashboard overview" width="100%" />
-			<br /><sub>2. Home dashboard overview</sub>
+			<img src="assets/app-screens/01-google-accounts.jpeg" alt="Google accounts" width="100%" />
+			<br /><sub>1. Google accounts</sub>
 		</td>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/transactions.jpeg" alt="Parsed transaction list" width="100%" />
-			<br /><sub>3. Parsed transaction list</sub>
-		</td>
-	</tr>
-	<tr>
-		<td align="center" width="33%">
-			<img src="assets/app-screens/spending-insights.jpeg" alt="Spending breakdown and insights" width="100%" />
-			<br /><sub>4. Spending breakdown and insights</sub>
-		</td>
-		<td align="center" width="33%">
-			<img src="assets/app-screens/risk-summary.jpeg" alt="Risk summary and financial status" width="100%" />
-			<br /><sub>5. Risk summary and financial status</sub>
-		</td>
-		<td align="center" width="33%">
-			<img src="assets/app-screens/chat-assistant.jpeg" alt="Chat assistant and guidance view" width="100%" />
-			<br /><sub>6. Chat assistant and guidance view</sub>
+			<img src="assets/app-screens/09-asking-notification-access.jpeg" alt="Asking notification access" width="100%" />
+			<br /><sub>9. Asking notification access</sub>
 		</td>
 	</tr>
 	<tr>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/market-overview.jpeg" alt="Market overview screen" width="100%" />
-			<br /><sub>7. Market overview screen</sub>
+			<img src="assets/app-screens/07-dashboard-home.jpeg" alt="Dashboard home" width="100%" />
+			<br /><sub>7. Dashboard home</sub>
 		</td>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/news-sentiment.jpeg" alt="News sentiment details" width="100%" />
-			<br /><sub>8. News sentiment details</sub>
+			<img src="assets/app-screens/06-news-dashboard-market-sentiment.jpeg" alt="News dashboard with market sentiment" width="100%" />
+			<br /><sub>6. News dashboard with market sentiment</sub>
 		</td>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/learn-overview.jpeg" alt="Learning module overview" width="100%" />
-			<br /><sub>9. Learning module overview</sub>
-		</td>
-	</tr>
-	<tr>
-		<td align="center" width="33%">
-			<img src="assets/app-screens/quiz-screen.jpeg" alt="Quiz interaction screen" width="100%" />
-			<br /><sub>10. Quiz interaction screen</sub>
-		</td>
-		<td align="center" width="33%">
-			<img src="assets/app-screens/roadmap.jpeg" alt="Roadmap progression view" width="100%" />
-			<br /><sub>11. Roadmap progression view</sub>
-		</td>
-		<td align="center" width="33%">
-			<img src="assets/app-screens/lesson-detail.jpeg" alt="Lesson detail and preview" width="100%" />
-			<br /><sub>12. Lesson detail and preview</sub>
+			<img src="assets/app-screens/03-news-sector-pulse-headlines.jpeg" alt="News dashboard with sector pulse and headlines" width="100%" />
+			<br /><sub>3. News dashboard with sector pulse and headlines</sub>
 		</td>
 	</tr>
 	<tr>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/progress-achievements.jpeg" alt="Progress and achievements view" width="100%" />
-			<br /><sub>13. Progress and achievements view</sub>
+			<img src="assets/app-screens/04-detailed-news.jpeg" alt="Detailed news" width="100%" />
+			<br /><sub>4. Detailed news</sub>
 		</td>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/category-insights.jpeg" alt="Category analytics and spending insights" width="100%" />
-			<br /><sub>14. Category analytics and spending insights</sub>
+			<img src="assets/app-screens/05-news-analysis.jpeg" alt="News analysis" width="100%" />
+			<br /><sub>5. News analysis</sub>
 		</td>
 		<td align="center" width="33%">
-			<img src="assets/app-screens/summary-screen.jpeg" alt="Final overview or summary screen" width="100%" />
-			<br /><sub>15. Final overview or summary screen</sub>
+			<img src="assets/app-screens/08-finance-dashboard.jpeg" alt="Finance dashboard" width="100%" />
+			<br /><sub>8. Finance dashboard</sub>
+		</td>
+	</tr>
+	<tr>
+		<td align="center" width="33%">
+			<img src="assets/app-screens/10-what-if-simulator-1.jpeg" alt="What if simulator 1" width="100%" />
+			<br /><sub>10. What if simulator</sub>
+		</td>
+		<td align="center" width="33%">
+			<img src="assets/app-screens/11-what-if-simulator-2.jpeg" alt="What if simulator 2" width="100%" />
+			<br /><sub>11. What if simulator</sub>
+		</td>
+		<td align="center" width="33%">
+			<img src="assets/app-screens/12-agent-c-chatbot.jpeg" alt="Agent C chatbot" width="100%" />
+			<br /><sub>12. Agent C chatbot</sub>
+		</td>
+	</tr>
+	<tr>
+		<td align="center" width="33%">
+			<img src="assets/app-screens/15-learning-page-1.jpeg" alt="Learning page 1" width="100%" />
+			<br /><sub>15. Learning page</sub>
+		</td>
+		<td align="center" width="33%">
+			<img src="assets/app-screens/13-learning-page-2.jpeg" alt="Learning page 2" width="100%" />
+			<br /><sub>13. Learning page</sub>
+		</td>
+		<td align="center" width="33%">
+			<img src="assets/app-screens/14-learning-page-3.jpeg" alt="Learning page 3" width="100%" />
+			<br /><sub>14. Learning page</sub>
 		</td>
 	</tr>
 </table>
