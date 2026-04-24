@@ -8,7 +8,7 @@ An AI-powered personal finance and market insight platform with a multi-agent ba
 	<img src="android/app/src/main/app/src/main/res/drawable/pinance_logo.png" alt="Agentic Finance System logo" width="220" />
 </p>
 
-The screenshots below are shown in the order they were captured from the `pinance` folder.
+
 
 <table>
 	<tr>
