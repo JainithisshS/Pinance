@@ -1,0 +1,326 @@
+\documentclass[conference]{IEEEtran}
+
+% ── Packages ──────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{cite}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{textcomp}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue,
+  citecolor=black
+}
+
+% ══════════════════════════════════════════════════════════════════════
+\begin{document}
+
+\title{Agentic Finance System: An AI-Powered Personal Finance and Market Insight Platform with Multi-Agent Architecture}
+
+\author{
+\IEEEauthorblockN{Jainithissh S}
+\IEEEauthorblockA{CB.SC.U4AIE23129\\Amrita Vishwa Vidyapeetham}
+\and
+\IEEEauthorblockN{Krishna Prakash S}
+\IEEEauthorblockA{CB.SC.U4AIE232138\\Amrita Vishwa Vidyapeetham}
+\and
+\IEEEauthorblockN{Nitheshkummar C}
+\IEEEauthorblockA{CB.SC.U4AIE23155\\Amrita Vishwa Vidyapeetham}
+\and
+\IEEEauthorblockN{Akhilesh Kumar S}
+\IEEEauthorblockA{CB.SC.U4AIE232170\\Amrita Vishwa Vidyapeetham}
+\and
+\IEEEauthorblockN{Adarsh Pradeep}
+\IEEEauthorblockA{CB.SC.U4AIE23109\\Amrita Vishwa Vidyapeetham}
+}
+
+\maketitle
+
+% ── Abstract ──────────────────────────────────────────────────────────
+\begin{abstract}
+We present the Agentic Finance System, an end-to-end AI-powered platform that unifies personal transaction data, real-time market sentiment, and curated financial domain knowledge into explainable, personalised financial guidance. The system employs a multi-agent architecture with three autonomous agents operating on a novel Two-Tier Pipeline: Tier~1 provides deterministic ML/rule-based inference, while Tier~2 layers LLM-powered agentic reasoning via Groq LLaMA~3.3 70B with automatic fallback. The platform integrates FinBERT-based NLP sentiment analysis, Random Forest risk and trend classifiers, a 32-chunk TF-IDF RAG engine, and a Bayesian Knowledge Tracing micro-learning system. An Android client built with Kotlin and Jetpack Compose captures bank SMS automatically via NotificationListenerService. The backend exposes 17 REST endpoints through FastAPI, with graceful degradation ensuring 100\% core feature availability regardless of external API status. The system demonstrates that multi-agent orchestration with deterministic fallbacks can deliver production-grade financial intelligence accessible to students and early-career earners.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Multi-Agent Systems, Personal Finance, Natural Language Processing, FinBERT, Retrieval-Augmented Generation, Bayesian Knowledge Tracing, Large Language Models
+\end{IEEEkeywords}
+
+% ══════════════════════════════════════════════════════════════════════
+%  I — INTRODUCTION
+% ══════════════════════════════════════════════════════════════════════
+\section{Introduction}
+
+India's digital payments ecosystem generates millions of bank SMS and UPI notifications daily. Despite this wealth of personal financial data, most users lack automated tools to convert these messages into actionable spending insights. Financial news arrives as a separate, disconnected stream with no link to an individual's actual financial situation.
+
+Existing solutions address fragments of this problem. Expense trackers (e.g., Walnut, Money Manager) rely on manual entry and offer no forward-looking intelligence. Market applications (e.g., Moneycontrol, ET Markets) deliver generic news without personalisation. Robo-advisors (e.g., Groww, Kuvera) focus on mutual-fund selection but ignore day-to-day spending patterns. Professional financial advisors remain inaccessible for students and early-career earners.
+
+The core gap is clear: no single system unifies \emph{personal transaction data}, \emph{real-time news sentiment}, and \emph{curated financial knowledge} into agentic, explainable, personalised guidance.
+
+The \textbf{Agentic Finance System} addresses this gap by:
+\begin{enumerate}
+  \item Ingesting and structuring personal finance data from bank SMS and UPI notifications automatically.
+  \item Computing a personal risk and spending profile using ML classifiers.
+  \item Understanding financial news and market trends using NLP transformers.
+  \item Generating grounded, explainable recommendations via a RAG-augmented multi-agent LLM pipeline.
+  \item Teaching financial literacy through a Bayesian adaptive micro-learning engine.
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════
+%  II — SYSTEM ARCHITECTURE
+% ══════════════════════════════════════════════════════════════════════
+\section{System Architecture}
+
+The system follows a \textbf{multi-agent architecture} with three autonomous agents coordinated through a FastAPI backend. Each agent operates on a \textbf{Two-Tier Pipeline}: Tier~1 provides fast, deterministic ML/rule-based inference; Tier~2 adds LLM-powered agentic reasoning via Groq (LLaMA~3.3 70B), with automatic fallback to Tier~1 if the LLM is unavailable.
+
+\subsection{High-Level Layers}
+
+The architecture comprises six layers:
+\begin{itemize}
+  \item \textbf{Client:} Android app (Kotlin, Jetpack Compose) with background \texttt{NotificationListenerService} for automatic SMS capture.
+  \item \textbf{API Gateway:} FastAPI backend (Python~3.11, Uvicorn) with Firebase JWT authentication.
+  \item \textbf{Agents:} Agent~A (Finance Analyzer), Agent~B (Market Intelligence), Agent~C (Decision Synthesizer).
+  \item \textbf{Learning:} Bayesian Knowledge Tracing engine with AI-generated micro-learning cards.
+  \item \textbf{Persistence:} Supabase PostgreSQL (production) / SQLite (development) with env-var routing.
+  \item \textbf{External APIs:} Groq Cloud LLM, Economic Times RSS feed, NSE live market data.
+\end{itemize}
+
+\subsection{Agent A --- Personal Finance Analyzer}
+
+Agent~A parses bank SMS via a 3-tier regex extraction cascade (currency-pattern $\to$ keyword-proximity $\to$ digit fallback). It classifies transactions into 10 spending categories using TF-IDF + Logistic Regression and evaluates financial risk with a Random Forest classifier (120 trees, depth~6) trained on 6~financial ratio features. A month-proration step projects partial-month data to a full month, preventing the common bias of artificially low risk in the first few days. The LLM tier generates a 4--5 sentence data-specific narrative referencing the user's actual amounts.
+
+\subsection{Agent B --- News \& Market Intelligence}
+
+Agent~B performs sentiment analysis on live Economic Times RSS headlines using FinBERT (ProsusAI/finbert) with headline weight 40\% and body weight 60\%. Thirteen boilerplate-removal regex patterns strip editorial noise before inference. spaCy NER extracts company entities, mapped to sectors (Banking, IT, Auto, Telecom, FMCG, Metals, Pharma) via a 25+ entry lookup. A Random Forest trend model (120 trees, depth~5) aggregates per-article sentiments to predict market direction (bullish/sideways/bearish). Real-time NSE index data is pre-warmed at server startup.
+
+\subsection{Agent C --- Decision Synthesizer \& RAG Chatbot}
+
+Agent~C retrieves top-3 relevant chunks from a curated 32-chunk financial knowledge corpus via custom TF-IDF with IDF smoothing and tag-match bonus ($\times 3$) weighting. Retrieved context, combined with Agent~A and Agent~B outputs and full conversation history, is passed to Groq LLaMA~3.3 70B. The system prompt enforces rupee-denominated, data-specific answers. A deterministic keyword-matched fallback covers 6~core topics when the LLM is unavailable.
+
+% ══════════════════════════════════════════════════════════════════════
+%  III — TECHNOLOGY STACK
+% ══════════════════════════════════════════════════════════════════════
+\section{Technology Stack}
+
+Table~\ref{tab:techstack} summarises the technology stack across all layers of the system.
+
+\begin{table}[!t]
+\centering
+\caption{Technology Stack}
+\label{tab:techstack}
+\renewcommand{\arraystretch}{1.15}
+\footnotesize
+\begin{tabular}{p{1.4cm} p{2.8cm} p{3cm}}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Purpose} \\
+\midrule
+Backend       & FastAPI + Uvicorn (Python~3.11)     & Async REST API \\
+Database      & Supabase PostgreSQL / SQLite        & Dual-DB with auto-failover \\
+Auth          & Firebase Admin SDK                  & JWT verification \\
+ML -- Risk    & scikit-learn Random Forest          & Risk classification \\
+ML -- Cat.    & TF-IDF + Logistic Regression        & SMS categorisation \\
+ML -- Trend   & Random Forest on FinBERT agg.       & Market direction \\
+NLP -- Sent.  & HuggingFace FinBERT                 & Sentiment scoring \\
+NLP -- NER    & spaCy en\_core\_web\_sm              & Entity extraction \\
+LLM           & Groq LLaMA~3.3 70B                  & Reasoning \& chatbot \\
+RAG           & Custom TF-IDF + IDF                 & Grounded responses \\
+Mobile        & Kotlin + Jetpack Compose            & Android client \\
+Deploy        & Docker + Render.com                 & Cloud deployment \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{ML Models}
+
+Table~\ref{tab:models} details the six ML/AI models employed across the three agents and learning engine.
+
+\begin{table}[!t]
+\centering
+\caption{ML and AI Models Summary}
+\label{tab:models}
+\renewcommand{\arraystretch}{1.15}
+\footnotesize
+\begin{tabular}{p{1.2cm} p{2.6cm} p{1.4cm} p{1.8cm}}
+\toprule
+\textbf{Model} & \textbf{Algorithm} & \textbf{Data} & \textbf{Output} \\
+\midrule
+Category  & TF-IDF + Log. Reg.            & 1K+ synth. SMS     & 10 categories \\
+Risk      & Random Forest (120, d=6)      & 900 profiles       & low/med/high \\
+Trend     & Random Forest (120, d=5)      & 600 regimes        & bull./side./bear. \\
+FinBERT   & BERT (fin. fine-tuned)        & ProsusAI           & pos./neg./neut. \\
+spaCy     & CNN + trans. parser           & OntoNotes 5.0      & ORG/PER/LOC \\
+LLaMA     & 70B autoregressive            & Web-scale          & NL generation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════
+%  IV — FEATURES
+% ══════════════════════════════════════════════════════════════════════
+\section{Features}
+
+\subsection{Automatic SMS Transaction Parsing}
+
+The system intercepts bank SMS and UPI notifications via Android's \texttt{NotificationListenerService}. Every notification is forwarded to the backend, which acts as the sole parsing authority. A 3-tier extraction pipeline handles the wide diversity of Indian bank message formats:
+
+\begin{enumerate}
+  \item \textbf{Tier~1 -- Currency Regex:} Matches patterns like \texttt{Rs}, \texttt{INR}, or the rupee symbol followed by an amount.
+  \item \textbf{Tier~2 -- Keyword Proximity:} Searches for amounts within 15~characters of keywords ``debited'' or ``credited''.
+  \item \textbf{Tier~3 -- Digit Fallback:} Extracts any standalone number with two or more digits as last resort.
+\end{enumerate}
+
+Credit/debit classification uses 15 credit keywords versus 12 debit keywords. Category assignment combines a keyword map with a TF-IDF + Logistic Regression model at confidence threshold $\geq 0.50$ across 10~classes.
+
+\subsection{Personal Financial Risk Analysis}
+
+Agent~A aggregates transactions over a date range and computes a 6-feature vector: income, fixed expenses, variable expenses, savings, savings rate, and variable share. A Random Forest classifier outputs a risk level with confidence score. Month-proration projects partial-month data to full-month estimates, preventing early-month low-risk bias. The LLM tier generates a personalised narrative referencing the user's actual rupee amounts.
+
+\subsection{News \& Market Sentiment Intelligence}
+
+Agent~B fetches live Economic Times RSS headlines and scores each through FinBERT. spaCy NER extracts company entities mapped to sectors via a 25+ entry lookup. A Random Forest trend model aggregates sentiments into market direction predictions. NSE index data is pre-warmed at startup for zero cold-start latency.
+
+\subsection{RAG-Grounded AI Chatbot}
+
+Agent~C provides a multi-turn conversational interface. For every query, it retrieves top-3 chunks from a 32-chunk financial knowledge corpus covering emergency funds, the 50/30/20 rule, debt management, SIP investing, tax saving, insurance, and more. Custom TF-IDF scoring with IDF smoothing and tag-match bonus ($\times 3$) enables topical retrieval. Retrieved context, Agent~A data, Agent~B sentiment, and history are passed to Groq LLaMA~3.3 70B. A deterministic fallback covers 6~core topics when the LLM is unavailable.
+
+\subsection{Adaptive Micro-Learning System}
+
+The learning engine uses \textbf{Bayesian Knowledge Tracing (BKT)} with a 3-state belief model per concept: $P(\text{Unknown}) + P(\text{Partial}) + P(\text{Mastered}) = 1.0$. Updates are conditioned on correctness and latency:
+\begin{itemize}
+  \item Fast correct ($<30$s): $P(\text{Mastered}) \mathrel{+}= 0.30$
+  \item Slow correct ($>30$s): $P(\text{Mastered}) \mathrel{+}= 0.15$, $P(\text{Partial}) \mathrel{+}= 0.15$
+  \item Fast wrong: $P(\text{Unknown}) \mathrel{+}= 0.20$ (guessing)
+  \item Slow wrong ($>60$s): $P(\text{Unknown}) \mathrel{+}= 0.40$ (struggling)
+\end{itemize}
+
+A DAG-structured concept graph with 10~topics and 4~difficulty levels ensures prerequisite-based unlock. The curriculum compiler scores concepts as $\text{score} = \text{readiness} \times \text{urgency} \times \text{relevance}$, surfacing the weakest unlocked concept relevant to the user's financial profile. AI-generated cards (150--200 words + MCQ) are cached per mastery level.
+
+\subsection{Gamified Learning Roadmap}
+
+Five lessons progress from Financial Basics through Investment Basics with base points (50), perfect-score bonus (100), and speed bonus (20). Star ratings: 3-star ($\geq$90\%), 2-star ($\geq$70\%), 1-star ($\geq$50\%). Six achievements provide additional engagement.
+
+\subsection{Android Application}
+
+The client comprises 30~Kotlin source files across 6~screens: Login, Dashboard, Chat, Learn (vertical-swipe reels), Roadmap, and Market. \texttt{NotificationListenerService} captures all notification text in the background. Kotlin Coroutines ensure non-blocking HTTP calls via Retrofit~2.
+
+% ══════════════════════════════════════════════════════════════════════
+%  V — API REFERENCE
+% ══════════════════════════════════════════════════════════════════════
+\section{API Design}
+
+The backend exposes 17~REST endpoints, all requiring Firebase Bearer JWT (development mode accepts unauthenticated requests as \texttt{default\_user}). Table~\ref{tab:api} lists all endpoints grouped by agent.
+
+\begin{table}[!t]
+\centering
+\caption{API Endpoint Reference (17 Endpoints)}
+\label{tab:api}
+\renewcommand{\arraystretch}{1.1}
+\scriptsize
+\begin{tabular}{l l l p{2.5cm}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Agent} & \textbf{Description} \\
+\midrule
+POST   & /api/parse\_message        & --    & Parse SMS to transaction \\
+GET    & /api/transactions          & --    & List transactions \\
+DELETE & /api/transactions          & --    & Delete all transactions \\
+PUT    & /api/trans./\{id\}/cat.    & --    & Override category \\
+POST   & /api/analyze\_finance      & A     & Risk analysis + LLM \\
+POST   & /api/expense\_breakdown    & A     & Category breakdown \\
+GET    & /api/risk\_logs\_summary    & A     & Risk history \\
+POST   & /api/analyze\_news         & B     & Sentiment analysis \\
+GET    & /api/news\_feed            & B     & Live RSS + FinBERT \\
+GET    & /api/live\_market          & B     & NSE indices \\
+POST   & /api/synthesize            & C     & RAG + LLM chatbot \\
+GET    & /api/learning/next-card    & Learn & BKT learning card \\
+POST   & /api/learning/submit-ans.  & Learn & Answer + BKT update \\
+GET    & /api/learning/roadmap      & Learn & Roadmap data \\
+POST   & /api/learning/complete-les.& Learn & Complete lesson \\
+GET    & /api/learning/stats        & Learn & User stats \\
+POST   & /api/analyze\_article      & B     & Article analysis \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ══════════════════════════════════════════════════════════════════════
+%  VI — DESIGN PATTERNS
+% ══════════════════════════════════════════════════════════════════════
+\section{Design Patterns \& SE Principles}
+
+Table~\ref{tab:patterns} summarises the software engineering patterns applied throughout the system.
+
+\begin{table}[!t]
+\centering
+\caption{Design Patterns Applied}
+\label{tab:patterns}
+\renewcommand{\arraystretch}{1.15}
+\footnotesize
+\begin{tabular}{p{2cm} p{5.2cm}}
+\toprule
+\textbf{Pattern} & \textbf{Application} \\
+\midrule
+Multi-Agent   & Three autonomous agents with strict separation of concerns \\
+Two-Tier      & ML (Tier~1) + LLM (Tier~2) with automatic fallback \\
+Singleton     & GroqClient, ConceptGraph, FinBERT pipeline, Supabase client \\
+Strategy      & Dual-DB routing (SQLite vs Supabase) via env variable \\
+Observer      & NotificationListenerService monitors notification stream \\
+DAG           & Concept prerequisite graph with DFS cycle detection \\
+Bayesian      & Probabilistic knowledge state (not deterministic scores) \\
+RAG           & TF-IDF retrieval + tag-bonus grounds all LLM responses \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Additional practices include CORS middleware, Firebase auth guards, background startup tasks (FinBERT pre-load in daemon thread), response caching, and graceful degradation via deterministic fallbacks at every LLM-dependent code path.
+
+% ══════════════════════════════════════════════════════════════════════
+%  VII — NOVELTY
+% ══════════════════════════════════════════════════════════════════════
+\section{Novelty \& Key Contributions}
+
+\subsection{Two-Tier Agentic Pipeline}
+Unlike conventional systems that rely solely on ML models or LLMs, every agent operates on a Two-Tier Pipeline. Tier~1 provides fast, deterministic ML/rule-based inference that is always available. Tier~2 layers LLM-powered agentic reasoning on top. If the LLM fails, Tier~1 automatically takes over, guaranteeing \textbf{100\% core feature availability} regardless of external API status---a critical requirement for financial applications.
+
+\subsection{Unified Personal + Market Context}
+No existing consumer product unifies a user's personal transaction data, real-time news sentiment, and curated financial knowledge into a single agentic response. Agent~C injects Agent~A's financial profile, Agent~B's sentiment signals, and RAG-retrieved domain knowledge into every LLM call, producing advice that references the user's actual amounts and current market conditions.
+
+\subsection{Bayesian Adaptive Learning for Finance}
+The micro-learning engine applies Bayesian Knowledge Tracing---proven in educational technology---to personal finance education. The 3-state belief model with latency-aware updates provides more nuanced learner assessment than binary correct/incorrect scoring. The curriculum compiler dynamically prioritises concepts based on readiness, urgency, and relevance to the user's financial profile.
+
+\subsection{Backend-Authoritative SMS Parsing}
+The Android client sends \emph{all} notifications to the backend without client-side filtering, placing parsing intelligence entirely server-side. This enables rapid iteration on parsing rules without app updates, a single source of truth for classification, and consistent behaviour across devices.
+
+\subsection{Domain-Specific NLP Stack}
+Rather than a general-purpose sentiment model, the system employs \textbf{FinBERT}---a BERT model fine-tuned on financial text. Combined with 13~boilerplate-removal patterns, 27~positive and 31~negative domain keyword fallbacks, and strong-phrase detection, it achieves finance-aware sentiment accuracy that generic models cannot match.
+
+\subsection{Graceful Degradation by Design}
+Every feature depending on an external API has a deterministic fallback path. The system never returns an empty or error state; it degrades gracefully to rule-based or cached responses. This is a deliberate architectural decision, not an afterthought.
+
+% ══════════════════════════════════════════════════════════════════════
+%  VIII — FUTURE SCOPE
+% ══════════════════════════════════════════════════════════════════════
+\section{Future Scope}
+
+\subsection{AI \& Model Enhancements}
+Future work includes replacing custom TF-IDF RAG with FAISS or Pinecone vector stores for semantic similarity retrieval, adding a self-evaluation loop where Agent~C critiques its own output, incorporating reinforcement learning from user feedback, and introducing LSTM or Prophet time-series models for predictive spending forecasting.
+
+\subsection{Product Features}
+Planned features include voice-based financial assistant via speech-to-text, portfolio tracking with Zerodha or Groww brokerage APIs, multi-language SMS parsing for Hindi and regional Indian languages, and Play Store release with cross-platform iOS support.
+
+\subsection{Engineering \& Operations}
+Engineering improvements target MLflow experiment tracking and model registry, a formal evaluation framework (accuracy, AUC-ROC, human judgement), CI/CD pipeline with GitHub Actions, and on-device SMS parsing for enhanced privacy.
+
+% ══════════════════════════════════════════════════════════════════════
+%  IX — CONCLUSION
+% ══════════════════════════════════════════════════════════════════════
+\section{Conclusion}
+
+The Agentic Finance System demonstrates that a multi-agent, two-tier architecture can deliver personalised, grounded financial guidance by unifying personal transaction data, real-time market sentiment, and curated domain knowledge. With 3~AI agents, 17~API endpoints, 6~ML/AI models, a 32-chunk RAG corpus, Bayesian adaptive learning across 10~financial concepts, and a full Android client, the system covers the end-to-end pipeline from raw SMS ingestion to explainable financial advice. The deliberate emphasis on graceful degradation ensures that every feature remains operational even when external services are unavailable---a principle essential for any production financial application.
+
+\end{document}
